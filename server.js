@@ -21,7 +21,7 @@ app.use("/api", routes);
 sequelize
   .authenticate()
   .then(async (res) => {
-    await sequelize.sync();
+    await sequelize.sync({force: true});
     console.log("Connection has been established successfully.");
     app.listen(PORT, function () {
       console.log("Server is running on port: " + PORT);

@@ -1,5 +1,5 @@
 const { Sequelize } = require('sequelize');
-const { relations } = require('./models/relations');
+const { relations } = require('./model/relations');
 
 const database = process.env.DB_NAME
 const username = process.env.DB_USER
@@ -11,17 +11,17 @@ const sequelize = new Sequelize(database, username, password, {
 });
 
 const modelDefiners = [
-	require('./models/currency.model'),
-	require('./models/customer.model'),
-	require('./models/item.model'),
-	require('./models/manufacturer.model'),
-	require('./models/user.model'),
-	require('./models/workspace.model'),
-	require('./models/workspacesUsers.model'),
-	require('./models/role.model'),
-	require('./models/status.model'),
-	require('./models/order.model'),
-	require('./models/orderItems.model'),
+	require('./model/currency.model'),
+	require('./model/customer.model'),
+	require('./model/item.model'),
+	require('./model/manufacturer.model'),
+	require('./model/user.model'),
+	require('./model/workspace.model'),
+	require('./model/workspacesUsers.model'),
+	require('./model/role.model'),
+	require('./model/status.model'),
+	require('./model/order.model'),
+	require('./model/orderItems.model'),
 ];
 
 for (const modelDefiner of modelDefiners) {
