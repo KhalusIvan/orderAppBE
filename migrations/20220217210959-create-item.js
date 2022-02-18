@@ -27,9 +27,9 @@ module.exports = {
       manufecturerId: {
         allowNull: false,
         type: Sequelize.INTEGER,
-        onDelete: "CASCADE",
+        onDelete: "RESTRICT",
         references: {
-          model: "Manufacturer",
+          model: "Manufacturers",
           key: "id",
           as: "manufacturerId",
         },

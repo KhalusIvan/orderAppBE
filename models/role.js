@@ -16,6 +16,8 @@ module.exports = (sequelize, DataTypes) => {
     {
       name: { type: DataTypes.STRING, allowNull: false },
       owner: DataTypes.BOOLEAN,
+      admin: DataTypes.BOOLEAN,
+      seller: DataTypes.BOOLEAN,
     },
     {
       sequelize,

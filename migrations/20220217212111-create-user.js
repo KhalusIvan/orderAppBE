@@ -29,9 +29,9 @@ module.exports = {
       },
       currentWorkspaceId: {
         type: Sequelize.INTEGER,
-        onDelete: "CASCADE",
+        onDelete: "RESTRICT",
         references: {
-          model: "Workspace",
+          model: "Workspaces",
           key: "id",
           as: "currentWorkspaceId",
         },

@@ -1,4 +1,4 @@
-const { models } = require("../sequelize");
+const { User } = require("../models");
 const secretJWT = process.env.SECRET_JWT;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
@@ -39,7 +39,7 @@ const registration = async (req, res) => {
     if (!req.body.password || req.body.password !== req.body.passwordRepeat) {
       return res.status(406).json({ message: "Repeated password" });
     }
-    const users = await models.user.findOne({
+    const users = await User.findOne({
       where: { email: req.body.email },
     });
     if (!users) {
@@ -51,7 +51,7 @@ const registration = async (req, res) => {
           password: hash,
           confirm: false,
         };
-        const user = await models.user.create(newUser);
+        const user = await User.create(newUser);
         jwt.sign(
           {
             id: user.id,
@@ -92,7 +92,7 @@ const registration = async (req, res) => {
 
 const confirmation = async (req, res) => {
   try {
-    const result = await models.user.update(
+    await User.update(
       { confirm: true },
       {
         where: { id: req.user.id },
@@ -110,7 +110,7 @@ const signIn = async (req, res) => {
       res.status(406).json({ message: "Information" });
       return;
     }
-    const user = await models.user.findOne({
+    const user = await User.findOne({
       where: { email: req.body.email },
     });
     if (user && bcrypt.compareSync(req.body.password, user.password)) {
@@ -120,7 +120,16 @@ const signIn = async (req, res) => {
         const token = jwt.sign({ id: user.id }, secretJWT, {
           expiresIn: req.body.rememberMe ? "30d" : "7d",
         });
-        return res.json({ token });
+        return res.json({
+          token,
+          user: {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            currentWorkspaceId: user.currentWorkspaceId,
+          },
+        });
       }
     } else {
       res.status(406).json({ message: "Not correct email or password" });
@@ -135,7 +144,7 @@ const resetPassword = async (req, res) => {
     if (!req.body.email) {
       return res.status(406).json({ message: "Information" });
     }
-    const user = await models.user.findOne({
+    const user = await User.findOne({
       where: { email: req.body.email },
     });
     if (user) {
@@ -187,7 +196,7 @@ const confirmPassword = async (req, res) => {
       return res.status(406).json({ status: "Invalid data" });
     }
     bcrypt.hash(req.user.password, 10, async function (err, hash) {
-      const result = await models.user.update(
+      const result = await User.update(
         { password: hash },
         {
           where: { id: req.user.id },

@@ -1,4 +1,5 @@
-const { models } = require("../sequelize");
+const { Workspace, Role, User, WorkspaceUser } = require("../models");
+const { Op } = require("sequelize");
 
 const getWorkspaces = async (req, res) => {
   try {
@@ -6,16 +7,14 @@ const getWorkspaces = async (req, res) => {
     if (req.query.page) {
       const limit = +process.env.ROWS_PER_PAGE;
       const offset = (+req.query.page - 1) * +process.env.ROWS_PER_PAGE;
-      result = await models.workspace.findAndCountAll({
-        include: [
-          { model: models.workspace_user, where: { userId: req.user.id } },
-        ],
+      result = await Workspace.findAndCountAll({
+        include: [{ model: Workspace_user, where: { userId: req.user.id } }],
         limit,
         offset,
       });
       result.pages = Math.ceil(result.count / limit);
     } else {
-      result = await models.workspace.findAll();
+      result = await Workspace.findAll();
     }
     return res.json(result);
   } catch (err) {
@@ -31,15 +30,23 @@ const createWorkspace = async (req, res) => {
   try {
     if (!req.body.name)
       return res.status(406).json({ message: "Incorrect data" });
-    const workspacePrev = await models.workspace.findOne({
+    const workspacePrev = await Workspace.findOne({
       where: { name: req.body.name },
     });
     if (workspacePrev) return res.status(406).json({ message: "Used name" });
-    const workspace = await models.workspace.create({ name: req.body.name });
-    const user = await models.user.findByPk(req.user.id);
-    const defaultRole = await models.role.findOne({ where: { default: true } });
-    const result = await user.addWorkspace(workspace, {
-      through: { roleId: defaultRole.id },
+    const workspace = await Workspace.create({ name: req.body.name });
+    const user = await User.findByPk(req.user.id);
+    const role = await Role.findOne({ where: { owner: true } });
+    await User.update(
+      { currentWorkspaceId: workspace.id },
+      {
+        where: { id: req.user.id },
+      }
+    );
+    await WorkspaceUser.create({
+      userId: user.id,
+      roleId: role.id,
+      workspaceId: workspace.id,
     });
     return res.json(workspace);
   } catch (err) {
@@ -47,8 +54,24 @@ const createWorkspace = async (req, res) => {
   }
 };
 
-const updateWorkspaceById = (req, res) => {
-  res.status(400).send("Failed");
+const updateWorkspaceById = async (req, res) => {
+  try {
+    if (!req.body.name)
+      return res.status(406).json({ message: "Incorrect data" });
+    const sameName = await Workspace.findOne({
+      where: { id: { [Op.not]: req.params.id }, name: req.body.name },
+    });
+    if (sameName) return res.status(406).json({ message: "Used name" });
+    const workspace = await Workspace.update(
+      { name: req.body.name },
+      {
+        where: { id: req.params.id },
+      }
+    );
+    return res.json(workspace);
+  } catch (err) {
+    return res.status(500).json(err);
+  }
 };
 
 const deleteWorkspaceById = (req, res) => {

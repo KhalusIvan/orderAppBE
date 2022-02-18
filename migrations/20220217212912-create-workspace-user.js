@@ -11,9 +11,9 @@ module.exports = {
       userId: {
         allowNull: false,
         type: Sequelize.INTEGER,
-        onDelete: "CASCADE",
+        onDelete: "RESTRICT",
         references: {
-          model: "User",
+          model: "Users",
           key: "id",
           as: "userId",
         },
@@ -21,9 +21,9 @@ module.exports = {
       roleId: {
         allowNull: false,
         type: Sequelize.INTEGER,
-        onDelete: "CASCADE",
+        onDelete: "RESTRICT",
         references: {
-          model: "Role",
+          model: "Roles",
           key: "id",
           as: "roleId",
         },
@@ -31,9 +31,9 @@ module.exports = {
       workspaceId: {
         allowNull: false,
         type: Sequelize.INTEGER,
-        onDelete: "CASCADE",
+        onDelete: "RESTRICT",
         references: {
-          model: "Workspace",
+          model: "Workspaces",
           key: "id",
           as: "workspaceId",
         },

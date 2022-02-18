@@ -19,9 +19,9 @@ module.exports = {
       orderId: {
         allowNull: false,
         type: Sequelize.INTEGER,
-        onDelete: "CASCADE",
+        onDelete: "RESTRICT",
         references: {
-          model: "Order",
+          model: "Orders",
           key: "id",
           as: "orderId",
         },
@@ -29,9 +29,9 @@ module.exports = {
       itemId: {
         allowNull: false,
         type: Sequelize.INTEGER,
-        onDelete: "CASCADE",
+        onDelete: "RESTRICT",
         references: {
-          model: "Item",
+          model: "Items",
           key: "id",
           as: "itemId",
         },

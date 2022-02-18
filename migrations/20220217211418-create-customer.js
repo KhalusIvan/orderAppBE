@@ -32,9 +32,9 @@ module.exports = {
       workspaceId: {
         allowNull: false,
         type: Sequelize.INTEGER,
-        onDelete: "CASCADE",
+        onDelete: "RESTRICT",
         references: {
-          model: "Workspace",
+          model: "Workspaces",
           key: "id",
           as: "workspaceId",
         },

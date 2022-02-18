@@ -15,9 +15,9 @@ module.exports = {
       currencyId: {
         allowNull: false,
         type: Sequelize.INTEGER,
-        onDelete: "CASCADE",
+        onDelete: "RESTRICT",
         references: {
-          model: "Currency",
+          model: "Currencies",
           key: "id",
           as: "currencyId",
         },
@@ -25,9 +25,9 @@ module.exports = {
       workspaceId: {
         allowNull: false,
         type: Sequelize.INTEGER,
-        onDelete: "CASCADE",
+        onDelete: "RESTRICT",
         references: {
-          model: "Workspace",
+          model: "Workspaces",
           key: "id",
           as: "workspaceId",
         },

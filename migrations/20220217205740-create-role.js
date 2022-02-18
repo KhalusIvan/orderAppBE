@@ -13,6 +13,15 @@ module.exports = {
         type: Sequelize.STRING
       },
       owner: {
+        default: false,
+        type: Sequelize.BOOLEAN
+      },
+      admin: {
+        default: false,
+        type: Sequelize.BOOLEAN
+      },
+      seller: {
+        default: false,
         type: Sequelize.BOOLEAN
       },
       createdAt: {
