@@ -1,13 +1,14 @@
-const { Workspace, Role, User, WorkspaceUser } = require("../models");
+const { Manufacturer, Role, Currency, WorkspaceUser } = require("../models");
 const { Op } = require("sequelize");
+const { getUserCurrentWorkspace } = require("./user.controller");
 
-const getWorkspaces = async (req, res) => {
+const getManufacturers = async (req, res) => {
   try {
     let result;
     if (req.query.page) {
       const limit = +process.env.ROWS_PER_PAGE;
       const offset = (+req.query.page - 1) * +process.env.ROWS_PER_PAGE;
-      result = await WorkspaceUser.findAndCountAll({
+      result = await Manufacturer.findAndCountAll({
         include: [
           { model: Workspace, as: "workspace" },
           { model: Role, as: "role", attributes: ["id", "name"] },
@@ -34,35 +35,33 @@ const getWorkspaces = async (req, res) => {
   }
 };
 
-const createWorkspace = async (req, res) => {
+const createManufacturer = async (req, res) => {
   try {
-    if (!req.body.name)
+    if (!req.body.name || !req.body.currencyId)
       return res.status(406).json({ message: "Incorrect data" });
-    const workspacePrev = await Workspace.findOne({
-      where: { name: req.body.name },
+    const isCurrency = await Currency.findByPk(req.body.currencyId);
+    if (!isCurrency)
+      return res.status(406).json({ message: "Incorrect currency" });
+
+    const workspaceId = await getUserCurrentWorkspace(req.user.id);
+
+    const sameManufacturer = await Manufacturer.findOne({
+      where: { name: req.body.name, workspaceId: workspaceId },
     });
-    if (workspacePrev) return res.status(406).json({ message: "Used name" });
-    const workspace = await Workspace.create({ name: req.body.name });
-    const user = await User.findByPk(req.user.id);
-    const role = await Role.findOne({ where: { owner: true } });
-    await User.update(
-      { currentWorkspaceId: workspace.id },
-      {
-        where: { id: req.user.id },
-      }
-    );
-    await WorkspaceUser.create({
-      userId: user.id,
-      roleId: role.id,
-      workspaceId: workspace.id,
+
+    if (sameManufacturer) return res.status(406).json({ message: "Used name" });
+    const manufacturer = await Manufacturer.create({
+      name: req.body.name,
+      currencyId: req.body.currencyId,
+      workspaceId,
     });
-    return res.json(workspace);
+    return res.json(manufacturer);
   } catch (err) {
-    return res.status(500).json(err);
+    return res.status(500).json({ err });
   }
 };
 
-const updateWorkspaceById = async (req, res) => {
+const updateManufacturerById = async (req, res) => {
   try {
     if (!req.body.name)
       return res.status(406).json({ message: "Incorrect data" });
@@ -83,7 +82,7 @@ const updateWorkspaceById = async (req, res) => {
 };
 
 module.exports = {
-  getWorkspaces,
-  createWorkspace,
-  updateWorkspaceById,
+  getManufacturers,
+  createManufacturer,
+  updateManufacturerById,
 };

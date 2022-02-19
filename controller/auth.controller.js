@@ -1,12 +1,11 @@
-const { User } = require("../models");
+const { User, Workspace } = require("../models");
 const secretJWT = process.env.SECRET_JWT;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { transporter } = require("../helpers/transporter.helper");
 
 const middleware = async (req, res, next) => {
-  if (req.path.startsWith("/auth") && !req.path.startsWith("/auth/confirm"))
-    return next();
+  if (req.path.startsWith("/auth")) return next();
 
   const authHeader = req.get("Authorization");
   if (!authHeader) {
@@ -90,20 +89,6 @@ const registration = async (req, res) => {
   }
 };
 
-const confirmation = async (req, res) => {
-  try {
-    await User.update(
-      { confirm: true },
-      {
-        where: { id: req.user.id },
-      }
-    );
-    return res.json({ status: "success" });
-  } catch (err) {
-    return res.status(500).json(err);
-  }
-};
-
 const signIn = async (req, res) => {
   try {
     if (!req.body.password || !req.body.email) {
@@ -112,6 +97,7 @@ const signIn = async (req, res) => {
     }
     const user = await User.findOne({
       where: { email: req.body.email },
+      include: [{ model: Workspace, as: "currentWorkspace" }],
     });
     if (user && bcrypt.compareSync(req.body.password, user.password)) {
       if (!user.confirm) {
@@ -127,7 +113,7 @@ const signIn = async (req, res) => {
             firstName: user.firstName,
             lastName: user.lastName,
             email: user.email,
-            currentWorkspaceId: user.currentWorkspaceId,
+            currentWorkspace: user.currentWorkspace,
           },
         });
       }
@@ -190,30 +176,9 @@ const resetPassword = async (req, res) => {
   }
 };
 
-const confirmPassword = async (req, res) => {
-  try {
-    if (!req.user.password) {
-      return res.status(406).json({ status: "Invalid data" });
-    }
-    bcrypt.hash(req.user.password, 10, async function (err, hash) {
-      const result = await User.update(
-        { password: hash },
-        {
-          where: { id: req.user.id },
-        }
-      );
-      return res.json({ status: "success" });
-    });
-  } catch (err) {
-    return res.status(500).json(err);
-  }
-};
-
 module.exports = {
   middleware,
   registration,
   signIn,
   resetPassword,
-  confirmation,
-  confirmPassword,
 };

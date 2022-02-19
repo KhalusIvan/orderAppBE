@@ -14,10 +14,12 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: "CASCADE",
       });
       WorkspaceUser.belongsTo(models.Role, {
+        as: "role",
         foreignKey: "roleId",
         onDelete: "CASCADE",
       });
       WorkspaceUser.belongsTo(models.Workspace, {
+        as: "workspace",
         foreignKey: "workspaceId",
         onDelete: "CASCADE",
       });
