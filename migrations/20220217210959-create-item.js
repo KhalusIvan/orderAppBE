@@ -24,7 +24,7 @@ module.exports = {
         allowNull: false,
         type: Sequelize.FLOAT,
       },
-      manufecturerId: {
+      manufacturerId: {
         allowNull: false,
         type: Sequelize.INTEGER,
         onDelete: "RESTRICT",

@@ -3,6 +3,7 @@ const secretJWT = process.env.SECRET_JWT;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { transporter } = require("../helpers/transporter.helper");
+const { getUserCurrencies } = require("./currency.controller");
 
 const middleware = async (req, res, next) => {
   if (req.path.startsWith("/auth")) return next();
@@ -114,6 +115,7 @@ const signIn = async (req, res) => {
             lastName: user.lastName,
             email: user.email,
             currentWorkspace: user.currentWorkspace,
+            currencies: await getUserCurrencies(user.currentWorkspace.id),
           },
         });
       }

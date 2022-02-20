@@ -1,5 +1,6 @@
-const { User, Workspace, Manufacturer } = require("../models");
+const { User, Workspace } = require("../models");
 const bcrypt = require("bcrypt");
+const { getUserCurrencies } = require("./currency.controller");
 
 const getUserCurrentWorkspace = async (userId) => {
   try {
@@ -51,15 +52,13 @@ const check = async (req, res) => {
     const user = await User.findOne({
       where: { id: req.user.id },
       include: [
-        { model: Workspace, as: "currentWorkspace" },
         {
           model: Workspace,
-          as: "workspaces",
-          attributes: ["id", "name"],
-          include: [{ model: Manufacturer, as: "manufacturers" }],
+          as: "currentWorkspace",
         },
       ],
     });
+
     if (user) {
       return res.json({
         id: user.id,
@@ -67,7 +66,7 @@ const check = async (req, res) => {
         lastName: user.lastName,
         email: user.email,
         currentWorkspace: user.currentWorkspace,
-        workspaces: user.workspaces,
+        currencies: await getUserCurrencies(user.currentWorkspace.id),
       });
     } else {
       res.status(401).json({ message: "Not found" });

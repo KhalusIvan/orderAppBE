@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       Item.belongsTo(models.Manufacturer, {
-        foreignKey: "manufecturerId",
+        foreignKey: "manufacturerId",
         onDelete: "CASCADE",
       });
       Item.hasMany(models.OrderItem, { foreignKey: "itemId" });
@@ -23,7 +23,7 @@ module.exports = (sequelize, DataTypes) => {
     code: { type: DataTypes.STRING, allowNull: false },
     buyPrice: { type: DataTypes.FLOAT, allowNull: false },
     recomendedSellPrice: { type: DataTypes.FLOAT, allowNull: false },
-    manufecturerId: { type: DataTypes.INTEGER, allowNull: false }
+    manufacturerId: { type: DataTypes.INTEGER, allowNull: false }
   }, {
     sequelize,
     modelName: 'Item',

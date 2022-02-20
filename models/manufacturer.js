@@ -9,12 +9,14 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      Manufacturer.hasMany(models.Item, { foreignKey: "manufecturerId" });
+      Manufacturer.hasMany(models.Item, { foreignKey: "manufacturerId" });
       Manufacturer.belongsTo(models.Currency, {
+        as: "currency",
         foreignKey: "currencyId",
         onDelete: "CASCADE",
       });
       Manufacturer.belongsTo(models.Workspace, {
+        as: "workspace",
         foreignKey: "workspaceId",
         onDelete: "CASCADE",
       });
