@@ -37,11 +37,18 @@ const getWorkspaces = async (req, res) => {
 const createWorkspace = async (req, res) => {
   try {
     if (!req.body.name)
-      return res.status(406).json({ message: "Incorrect data" });
+      return res.status(406).json({
+        severity: "error",
+        text: "Введено некоректні інформацію!",
+      });
     const workspacePrev = await Workspace.findOne({
       where: { name: req.body.name },
     });
-    if (workspacePrev) return res.status(406).json({ message: "Used name" });
+    if (workspacePrev)
+      return res.status(406).json({
+        severity: "error",
+        text: "Дана назва використовується!",
+      });
     const workspace = await Workspace.create({ name: req.body.name });
     const user = await User.findByPk(req.user.id);
     const role = await Role.findOne({ where: { owner: true } });
@@ -56,7 +63,11 @@ const createWorkspace = async (req, res) => {
       roleId: role.id,
       workspaceId: workspace.id,
     });
-    return res.json(workspace);
+    return res.json({
+      severity: "success",
+      text: "Успішно додано!",
+      workspace,
+    });
   } catch (err) {
     return res.status(500).json(err);
   }
@@ -65,18 +76,29 @@ const createWorkspace = async (req, res) => {
 const updateWorkspaceById = async (req, res) => {
   try {
     if (!req.body.name)
-      return res.status(406).json({ message: "Incorrect data" });
+      return res.status(406).json({
+        severity: "error",
+        text: "Введено некоректні інформацію!",
+      });
     const sameName = await Workspace.findOne({
       where: { id: { [Op.not]: req.params.id }, name: req.body.name },
     });
-    if (sameName) return res.status(406).json({ message: "Used name" });
+    if (sameName)
+      return res.status(406).json({
+        severity: "error",
+        text: "Дана назва використовується!",
+      });
     const workspace = await Workspace.update(
       { name: req.body.name },
       {
         where: { id: req.params.id },
       }
     );
-    return res.json(workspace);
+    return res.json({
+      severity: "success",
+      text: "Успішно оновлено!",
+      workspace,
+    });
   } catch (err) {
     return res.status(500).json(err);
   }

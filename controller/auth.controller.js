@@ -34,10 +34,14 @@ const registration = async (req, res) => {
       !req.body.password ||
       !req.body.passwordRepeat
     ) {
-      return res.status(406).json({ message: "Incorrect data" });
+      return res
+        .status(406)
+        .json({ severity: "error", text: "Введено некоректну інформацію!" });
     }
     if (!req.body.password || req.body.password !== req.body.passwordRepeat) {
-      return res.status(406).json({ message: "Repeated password" });
+      return res
+        .status(406)
+        .json({ severity: "error", text: "Повторний пароль не вірний!" });
     }
     const users = await User.findOne({
       where: { email: req.body.email },
@@ -75,15 +79,25 @@ const registration = async (req, res) => {
               function (err, info) {
                 if (err) {
                   console.log(err);
-                  return res.status(406).json({ status: "error" });
-                } else return res.json({ status: "confirm" });
+                  return res.status(406).json({
+                    severity: "error",
+                    text: "Помилка надсилання повідомлення! Зв'яжіться з адміністратором!",
+                  });
+                } else
+                  return res.json({
+                    severity: "success",
+                    text: "Лист-підтвердження надіслано на пошту!",
+                  });
               }
             );
           }
         );
       });
     } else {
-      return res.status(406).json({ message: "Taken email" });
+      return res.status(406).json({
+        severity: "error",
+        text: "Зайнятий емейл!",
+      });
     }
   } catch (err) {
     return res.status(500).json(err);
@@ -92,8 +106,11 @@ const registration = async (req, res) => {
 
 const signIn = async (req, res) => {
   try {
+    console.log(req.body);
     if (!req.body.password || !req.body.email) {
-      res.status(406).json({ message: "Information" });
+      res
+        .status(406)
+        .json({ severity: "error", text: "Введено некоректну інформацію!" });
       return;
     }
     const user = await User.findOne({
@@ -102,7 +119,10 @@ const signIn = async (req, res) => {
     });
     if (user && bcrypt.compareSync(req.body.password, user.password)) {
       if (!user.confirm) {
-        return res.status(406).json({ message: "Not verified" });
+        return res.status(406).json({
+          severity: "error",
+          text: "Підтвердіть користувача!",
+        });
       } else {
         const token = jwt.sign({ id: user.id }, secretJWT, {
           expiresIn: req.body.rememberMe ? "30d" : "7d",
@@ -115,12 +135,15 @@ const signIn = async (req, res) => {
             lastName: user.lastName,
             email: user.email,
             currentWorkspace: user.currentWorkspace,
-            currencies: await getUserCurrencies(user.currentWorkspace.id),
           },
+          currencies: await getUserCurrencies(user.currentWorkspace.id),
         });
       }
     } else {
-      res.status(406).json({ message: "Not correct email or password" });
+      res.status(406).json({
+        severity: "error",
+        text: "Не вірний логін або пароль!",
+      });
     }
   } catch (err) {
     return res.status(500).json(err);
@@ -130,7 +153,10 @@ const signIn = async (req, res) => {
 const resetPassword = async (req, res) => {
   try {
     if (!req.body.email) {
-      return res.status(406).json({ message: "Information" });
+      return res.status(406).json({
+        severity: "error",
+        text: "Введено некоректні інформацію!",
+      });
     }
     const user = await User.findOne({
       where: { email: req.body.email },
@@ -164,14 +190,24 @@ const resetPassword = async (req, res) => {
             function (err, info) {
               if (err) {
                 console.log(err);
-                return res.status(406).json({ status: "error" });
-              } else return res.json({ status: "sended" });
+                return res.status(406).json({
+                  severity: "error",
+                  text: "Помилка надсилання повідомлення! Зв'яжіться з адміністратором!",
+                });
+              } else
+                return res.json({
+                  severity: "success",
+                  text: "Новий пароль надіслано на пошту!",
+                });
             }
           );
         }
       );
     } else {
-      res.status(406).json({ message: "Not correct email" });
+      res.status(406).json({
+        severity: "error",
+        text: "Введено некоректний емейл!",
+      });
     }
   } catch (err) {
     return res.status(500).json(err);

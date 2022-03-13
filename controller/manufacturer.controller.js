@@ -33,10 +33,16 @@ const getManufacturers = async (req, res) => {
 const createManufacturer = async (req, res) => {
   try {
     if (!req.body.name || !req.body.currencyId)
-      return res.status(406).json({ message: "Incorrect data" });
+      return res.status(406).json({
+        severity: "error",
+        text: "Введено некоректні інформацію!",
+      });
     const isCurrency = await Currency.findByPk(req.body.currencyId);
     if (!isCurrency)
-      return res.status(406).json({ message: "Incorrect currency" });
+      return res.status(406).json({
+        severity: "error",
+        text: "Введено некоректні інформацію!",
+      });
 
     const workspaceId = await getUserCurrentWorkspace(req.user.id);
 
@@ -44,13 +50,21 @@ const createManufacturer = async (req, res) => {
       where: { name: req.body.name, workspaceId: workspaceId },
     });
 
-    if (sameManufacturer) return res.status(406).json({ message: "Used name" });
+    if (sameManufacturer)
+      return res.status(406).json({
+        severity: "error",
+        text: "Дана назва вже використовується!",
+      });
     const manufacturer = await Manufacturer.create({
       name: req.body.name,
       currencyId: req.body.currencyId,
       workspaceId,
     });
-    return res.json(manufacturer);
+    return res.json({
+      severity: "success",
+      text: "Успішно додано!",
+      manufacturer,
+    });
   } catch (err) {
     return res.status(500).json({ err });
   }
@@ -59,12 +73,18 @@ const createManufacturer = async (req, res) => {
 const updateManufacturerById = async (req, res) => {
   try {
     if (!req.body.name && !req.body.currencyId)
-      return res.status(406).json({ message: "Incorrect data" });
+      return res.status(406).json({
+        severity: "error",
+        text: "Введено некоректні інформацію!",
+      });
     const update = {};
     if (req.body.currencyId) {
       const isCurrency = await Currency.findByPk(req.body.currencyId);
       if (!isCurrency)
-        return res.status(406).json({ message: "Incorrect currency" });
+        return res.status(406).json({
+          severity: "error",
+          text: "Введено некоректні інформацію!",
+        });
       update.currencyId = req.body.currencyId;
     }
 
@@ -77,14 +97,22 @@ const updateManufacturerById = async (req, res) => {
           id: { [Op.not]: req.params.id },
         },
       });
-      if (sameName) return res.status(406).json({ message: "Used name" });
+      if (sameName)
+        return res.status(406).json({
+          severity: "error",
+          text: "Дана назва вже використовується!",
+        });
       update.name = req.body.name;
     }
 
     const manufacturer = await Manufacturer.update(update, {
       where: { id: req.params.id },
     });
-    return res.json(manufacturer);
+    return res.json({
+      severity: "success",
+      text: "Успішно оновлено!",
+      manufacturer,
+    });
   } catch (err) {
     return res.status(500).json(err);
   }
@@ -95,13 +123,20 @@ const deleteManufacturer = async (req, res) => {
     const item = await Item.findOne({
       where: { manufacturerId: req.params.id },
     });
-    if (item) return res.status(406).json({ status: "Can't delete" });
+    if (item)
+      return res.status(406).json({
+        severity: "error",
+        text: "Видалення неможливе!",
+      });
     await Manufacturer.destroy({
       where: {
         id: req.params.id,
       },
     });
-    return res.json({ status: "success" });
+    return res.json({
+      severity: "success",
+      text: "Успішно видалено!",
+    });
   } catch (err) {
     return res.status(500).json(err);
   }
