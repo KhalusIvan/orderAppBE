@@ -1,31 +1,45 @@
-const { Manufacturer, Currency, Item } = require("../models");
+const { Manufacturer, Currency, Item, Sequelize } = require("../models");
 const { Op } = require("sequelize");
-const { getUserCurrentWorkspace } = require("./user.controller");
 
 const getManufacturers = async (req, res) => {
   try {
     let result;
-    const workspaceId = await getUserCurrentWorkspace(req.user.id);
     if (req.query.page) {
       const limit = +process.env.ROWS_PER_PAGE;
       const offset = (+req.query.page - 1) * +process.env.ROWS_PER_PAGE;
       result = await Manufacturer.findAndCountAll({
         include: [{ model: Currency, as: "currency" }],
-        where: { workspaceId: workspaceId },
+        where: { workspaceId: req.user.workspaceId },
         limit,
         offset,
         attributes: ["id", "name"],
       });
+      if (req.query.filter) {
+        const currencyCount = await Manufacturer.findAll({
+          where: { workspaceId: req.user.workspaceId },
+          include: [
+            {
+              model: Currency,
+              as: "currency",
+              attributes: ["id", "name", "code"],
+            },
+          ],
+          attributes: [[Sequelize.literal("COUNT(currencyId)"), "number"]],
+          group: "currencyId",
+        });
+        result.currency = currencyCount;
+      }
       result.pages = Math.ceil(result.count / limit);
     } else {
       result = await Manufacturer.findAll({
         include: [{ model: Currency, as: "currency" }],
-        where: { workspaceId: workspaceId },
+        where: { workspaceId: req.user.workspaceId },
         attributes: ["id", "name"],
       });
     }
     return res.json(result);
   } catch (err) {
+    console.log(err);
     return res.status(500).json(err);
   }
 };
@@ -44,7 +58,7 @@ const createManufacturer = async (req, res) => {
         text: "Введено некоректні інформацію!",
       });
 
-    const workspaceId = await getUserCurrentWorkspace(req.user.id);
+    const workspaceId = req.user.workspaceId;
 
     const sameManufacturer = await Manufacturer.findOne({
       where: { name: req.body.name, workspaceId: workspaceId },
@@ -88,7 +102,7 @@ const updateManufacturerById = async (req, res) => {
       update.currencyId = req.body.currencyId;
     }
 
-    const workspaceId = await getUserCurrentWorkspace(req.user.id);
+    const workspaceId = req.user.workspaceId;
     if (req.body.name) {
       const sameName = await Manufacturer.findOne({
         where: {
@@ -126,7 +140,7 @@ const deleteManufacturer = async (req, res) => {
     if (item)
       return res.status(406).json({
         severity: "error",
-        text: "Видалення неможливе!",
+        text: "Спочатку видаліть всю продукцію!",
       });
     await Manufacturer.destroy({
       where: {

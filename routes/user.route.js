@@ -8,7 +8,7 @@ const {
 
 const itemRoutes = express.Router();
 
-itemRoutes.post("/check", check);
+itemRoutes.get("/check", check);
 itemRoutes.post("/confirm-password", confirmPassword);
 itemRoutes.post("/confirmation", confirmation);
 

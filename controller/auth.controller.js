@@ -17,6 +17,11 @@ const middleware = async (req, res, next) => {
   try {
     const currentUser = jwt.verify(token, secretJWT);
     req.user = currentUser;
+    const user = await User.findOne({
+      where: { id: req.user.id },
+      attributes: ["currentWorkspaceId"],
+    });
+    req.user.workspaceId = user.currentWorkspaceId;
   } catch (e) {
     if (e instanceof jwt.JsonWebTokenError) {
       return res.status(401).json({ message: "Incorrect token" });
@@ -62,11 +67,11 @@ const registration = async (req, res) => {
           },
           secretJWT,
           {
-            expiresIn: "7d",
+            expiresIn: "90d",
           },
           (err, emailToken) => {
             const url =
-              process.env.FRONT_END_URL + `/confirmation/${emailToken}`;
+              process.env.FRONT_END_URL + `/auth/confirmation/${emailToken}`;
             let html_text = `Будь ласка перейдіть за <a href="${url}">даним посиланням</a>  щоб підтвердити Ваш e-mail адрес.`;
             let subject_text = "Підтвердження емайла";
             transporter.sendMail(
@@ -136,7 +141,7 @@ const signIn = async (req, res) => {
             email: user.email,
             currentWorkspace: user.currentWorkspace,
           },
-          currencies: await getUserCurrencies(user.currentWorkspace.id),
+          //currencies: await getUserCurrencies(user.currentWorkspace.id),
         });
       }
     } else {
@@ -177,7 +182,8 @@ const resetPassword = async (req, res) => {
         },
         (err, emailToken) => {
           const url =
-            process.env.FRONT_END_URL + `/reset_password/${emailToken}`;
+            process.env.FRONT_END_URL +
+            `/auth/confirmation_password/${emailToken}`;
           let html_text = `Ваш новий пароль ${new_password} </br> Будь ласка перейдіть за <a href="${url}">даним посиланням</a>  щоб підтвердити зміну паролю.`;
           let subject_text = "Підтвердження зміни пароля";
           transporter.sendMail(
