@@ -4,12 +4,21 @@ const { Op } = require("sequelize");
 const getManufacturers = async (req, res) => {
   try {
     let result;
+    const whereRequest = { workspaceId: req.user.workspaceId };
+    if (req.query.currencyId) {
+      const values = req.query.currencyId.split(",");
+      whereRequest.currencyId =
+        values.length === 1 ? values[0] : { [Op.or]: values };
+    }
+    if (req.query.search) {
+      whereRequest.name = { [Op.like]: `%${req.query.search}%` };
+    }
     if (req.query.page) {
       const limit = +process.env.ROWS_PER_PAGE;
       const offset = (+req.query.page - 1) * +process.env.ROWS_PER_PAGE;
       result = await Manufacturer.findAndCountAll({
         include: [{ model: Currency, as: "currency" }],
-        where: { workspaceId: req.user.workspaceId },
+        where: whereRequest,
         limit,
         offset,
         attributes: ["id", "name"],
@@ -33,7 +42,7 @@ const getManufacturers = async (req, res) => {
     } else {
       result = await Manufacturer.findAll({
         include: [{ model: Currency, as: "currency" }],
-        where: { workspaceId: req.user.workspaceId },
+        where: whereRequest,
         attributes: ["id", "name"],
       });
     }
