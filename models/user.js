@@ -19,6 +19,8 @@ module.exports = (sequelize, DataTypes) => {
       User.belongsToMany(models.Workspace, {
         through: "WorkspaceUser",
         as: "workspaces",
+        foreignKey: "userId",
+        onDelete: "CASCADE",
       });
     }
   }

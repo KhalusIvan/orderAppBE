@@ -1,5 +1,5 @@
-"use strict";
-const { Model } = require("sequelize");
+'use strict'
+const { Model } = require('sequelize')
 module.exports = (sequelize, DataTypes) => {
   class WorkspaceUser extends Model {
     /**
@@ -10,31 +10,35 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       WorkspaceUser.belongsTo(models.User, {
-        foreignKey: "userId",
-        onDelete: "CASCADE",
-      });
+        foreignKey: 'userId',
+        onDelete: 'CASCADE',
+      })
       WorkspaceUser.belongsTo(models.Role, {
-        as: "role",
-        foreignKey: "roleId",
-        onDelete: "CASCADE",
-      });
+        as: 'role',
+        foreignKey: 'roleId',
+        onDelete: 'CASCADE',
+      })
       WorkspaceUser.belongsTo(models.Workspace, {
-        as: "workspace",
-        foreignKey: "workspaceId",
-        onDelete: "CASCADE",
-      });
+        as: 'workspace',
+        foreignKey: 'workspaceId',
+        onDelete: 'CASCADE',
+      })
     }
   }
   WorkspaceUser.init(
     {
-      userId: { type: DataTypes.INTEGER, allowNull: false },
-      roleId: { type: DataTypes.INTEGER, allowNull: false },
-      workspaceId: { type: DataTypes.INTEGER, allowNull: false },
+      userId: { type: DataTypes.INTEGER, allowNull: false, foreignKey: true },
+      roleId: { type: DataTypes.INTEGER, allowNull: false, foreignKey: true },
+      workspaceId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        foreignKey: true,
+      },
     },
     {
       sequelize,
-      modelName: "WorkspaceUser",
-    }
-  );
-  return WorkspaceUser;
-};
+      modelName: 'WorkspaceUser',
+    },
+  )
+  return WorkspaceUser
+}

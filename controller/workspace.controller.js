@@ -5,15 +5,16 @@ const getWorkspaces = async (req, res) => {
   try {
     let result
     const whereRequest = { userId: req.user.id }
+    const whereName = {}
     if (req.query.search) {
-      whereRequest.name = { [Op.like]: `%${req.query.search}%` }
+      whereName.name = { [Op.like]: `%${req.query.search}%` }
     }
     if (req.query.page) {
       const limit = +process.env.ROWS_PER_PAGE
       const offset = (+req.query.page - 1) * +process.env.ROWS_PER_PAGE
       result = await WorkspaceUser.findAndCountAll({
         include: [
-          { model: Workspace, as: 'workspace' },
+          { model: Workspace, as: 'workspace', where: whereName },
           { model: Role, as: 'role', attributes: ['id', 'name'] },
         ],
         where: whereRequest,
@@ -25,7 +26,7 @@ const getWorkspaces = async (req, res) => {
     } else {
       result = await WorkspaceUser.findAll({
         include: [
-          { model: Workspace, as: 'workspace' },
+          { model: Workspace, as: 'workspace', where: whereName },
           { model: Role, as: 'role', attributes: ['id', 'name'] },
         ],
         where: whereRequest,
@@ -56,17 +57,17 @@ const createWorkspace = async (req, res) => {
     const workspace = await Workspace.create({ name: req.body.name })
     const user = await User.findByPk(req.user.id)
     const role = await Role.findOne({ where: { owner: true } })
+    await WorkspaceUser.create({
+      userId: user.id,
+      roleId: role.id,
+      workspaceId: workspace.id,
+    })
     await User.update(
       { currentWorkspaceId: workspace.id },
       {
         where: { id: req.user.id },
       },
     )
-    await WorkspaceUser.create({
-      userId: user.id,
-      roleId: role.id,
-      workspaceId: workspace.id,
-    })
     return res.json({
       severity: 'success',
       text: 'Успішно додано!',

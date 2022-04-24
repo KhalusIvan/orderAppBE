@@ -1,5 +1,5 @@
-"use strict";
-const { Model } = require("sequelize");
+'use strict'
+const { Model } = require('sequelize')
 module.exports = (sequelize, DataTypes) => {
   class Workspace extends Model {
     /**
@@ -9,17 +9,19 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      Workspace.hasMany(models.Customer, { foreignKey: "workspaceId" });
+      Workspace.hasMany(models.Customer, { foreignKey: 'workspaceId' })
       Workspace.hasMany(models.Manufacturer, {
-        as: "manufacturers",
-        foreignKey: "workspaceId",
-      });
-      Workspace.hasMany(models.WorkspaceUser, { foreignKey: "workspaceId" });
-      Workspace.hasMany(models.User, { foreignKey: "currentWorkspaceId" });
+        as: 'manufacturers',
+        foreignKey: 'workspaceId',
+      })
+      Workspace.hasMany(models.WorkspaceUser, { foreignKey: 'workspaceId' })
+      Workspace.hasMany(models.User, { foreignKey: 'currentWorkspaceId' })
       Workspace.belongsToMany(models.User, {
-        through: "WorkspaceUser",
-        as: "users",
-      });
+        through: 'WorkspaceUser',
+        as: 'users',
+        foreignKey: 'workspaceId',
+        onDelete: 'CASCADE',
+      })
     }
   }
   Workspace.init(
@@ -28,8 +30,8 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       sequelize,
-      modelName: "Workspace",
-    }
-  );
-  return Workspace;
-};
+      modelName: 'Workspace',
+    },
+  )
+  return Workspace
+}
