@@ -1,6 +1,5 @@
 const { User, Workspace } = require('../models')
 const bcrypt = require('bcrypt')
-const { getUserCurrencies } = require('./currency.controller')
 
 const confirmation = async (req, res) => {
   try {
@@ -65,7 +64,6 @@ const check = async (req, res) => {
           email: user.email,
           currentWorkspace: user.currentWorkspace,
         },
-        //currencies: await getUserCurrencies(user.currentWorkspace.id),
       })
     } else {
       res.status(401).json({})
@@ -102,7 +100,6 @@ const setCurrentWorkspace = async (req, res) => {
         email: user.email,
         currentWorkspace: user.currentWorkspace,
       },
-      //currencies: await getUserCurrencies(user.currentWorkspace.id),
     })
   } catch (err) {
     return res.status(500).json(err)
