@@ -1,4 +1,10 @@
-const { Item, OrderItem, Sequelize } = require('../models')
+const {
+  Item,
+  OrderItem,
+  Manufacturer,
+  Currency,
+  Sequelize,
+} = require('../models')
 const { Op } = require('sequelize')
 
 const getItems = async (req, res) => {
@@ -12,14 +18,28 @@ const getItems = async (req, res) => {
         values.length === 1 ? values[0] : { [Op.or]: values }
     }
     if (req.query.search) {
-      whereRequest.name = { [Op.like]: `%${req.query.search}%` }
+      whereRequest[Op.or] = [
+        { name: { [Op.like]: `%${req.query.search}%` } },
+        { code: { [Op.like]: `%${req.query.search}%` } },
+      ]
     }
     if (req.query.page) {
       const limit = +process.env.ROWS_PER_PAGE
       const offset = (+req.query.page - 1) * +process.env.ROWS_PER_PAGE
       result = await Item.findAndCountAll({
         include: [
-          { model: Manufacturer, as: 'manufacturer', where: whereWorkspace },
+          {
+            model: Manufacturer,
+            as: 'manufacturer',
+            where: whereWorkspace,
+            include: [
+              {
+                model: Currency,
+                as: 'currency',
+                attributes: ['code'],
+              },
+            ],
+          },
         ],
         where: whereRequest,
         limit,
@@ -28,7 +48,6 @@ const getItems = async (req, res) => {
       })
       if (req.query.filter) {
         const manufacturerCount = await Item.findAll({
-          where: { workspaceId: req.user.workspaceId },
           include: [
             {
               model: Manufacturer,
@@ -46,7 +65,18 @@ const getItems = async (req, res) => {
     } else {
       result = await Item.findAll({
         include: [
-          { model: Manufacturer, as: 'manufacturer', where: whereWorkspace },
+          {
+            model: Manufacturer,
+            as: 'manufacturer',
+            where: whereWorkspace,
+            include: [
+              {
+                model: Currency,
+                as: 'currency',
+                attributes: ['code'],
+              },
+            ],
+          },
         ],
         where: whereRequest,
         attributes: ['id', 'name', 'code', 'buyPrice', 'recomendedSellPrice'],
