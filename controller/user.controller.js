@@ -1,5 +1,52 @@
-const { User, Workspace } = require('../models')
+const { User, Workspace, Sequelize } = require('../models')
+const { Op } = require('sequelize')
 const bcrypt = require('bcrypt')
+
+const getUsers = async (req, res) => {
+  try {
+    let result
+    const whereRequest = { id: { [Op.not]: req.user.id } }
+    if (req.query.search) {
+      whereRequest[Op.or] = [
+        { firstName: { [Op.like]: `%${req.query.search}%` } },
+        { lastName: { [Op.like]: `%${req.query.search}%` } },
+        { email: { [Op.like]: `%${req.query.search}%` } },
+      ]
+    }
+    if (req.query.page) {
+      const limit = +process.env.ROWS_PER_PAGE
+      const offset = (+req.query.page - 1) * +process.env.ROWS_PER_PAGE
+      result = await User.findAndCountAll({
+        /*include: [
+          {
+            model: Workspace,
+            as: 'workspaces',
+          },
+        ],*/
+        where: whereRequest,
+        limit,
+        offset,
+        attributes: ['id', 'firstName', 'lastName', 'email'],
+      })
+      result.pages = Math.ceil(result.count / limit)
+    } else {
+      result = await User.findAll({
+        /*include: [
+          {
+            model: Workspace,
+            as: 'workspaces',
+          },
+        ],*/
+        where: whereRequest,
+        attributes: ['id', 'firstName', 'lastName', 'email'],
+      })
+    }
+    return res.json(result)
+  } catch (err) {
+    console.log(err)
+    return res.status(500).json(err)
+  }
+}
 
 const confirmation = async (req, res) => {
   try {
@@ -107,6 +154,7 @@ const setCurrentWorkspace = async (req, res) => {
 }
 
 module.exports = {
+  getUsers,
   confirmation,
   confirmPassword,
   check,

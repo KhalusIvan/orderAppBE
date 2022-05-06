@@ -4,9 +4,11 @@ const { Op } = require('sequelize')
 const getEmployees = async (req, res) => {
   try {
     let result
-    const whereWorkspace = { workspaceId: req.user.workspaceId }
+    const whereWorkspace = {
+      workspaceId: req.user.workspaceId,
+      userId: { [Op.not]: req.user.id },
+    }
     const whereRequestUser = {}
-    const whereRequestRole = {}
     if (req.query.search) {
       whereRequestUser[Op.or] = [
         { firstName: { [Op.like]: `%${req.query.search}%` } },
@@ -14,14 +16,28 @@ const getEmployees = async (req, res) => {
         { email: { [Op.like]: `%${req.query.search}%` } },
       ]
     }
+    if (req.query.roleId) {
+      const values = req.query.roleId.split(',')
+      whereWorkspace.roleId =
+        values.length === 1 ? values[0] : { [Op.or]: values }
+    }
     if (req.query.page) {
       const limit = +process.env.ROWS_PER_PAGE
       const offset = (+req.query.page - 1) * +process.env.ROWS_PER_PAGE
       result = await WorkspaceUser.findAndCountAll({
         where: whereWorkspace,
-        includes: [
-          { model: Role, as: 'role', where: whereRequestRole },
-          { model: User, as: 'user', where: whereRequestUser },
+        include: [
+          {
+            model: Role,
+            as: 'role',
+            attributes: ['id', 'name'],
+          },
+          {
+            model: User,
+            as: 'user',
+            where: whereRequestUser,
+            attributes: ['id', 'firstName', 'lastName', 'email'],
+          },
         ],
         limit,
         offset,
@@ -46,9 +62,18 @@ const getEmployees = async (req, res) => {
     } else {
       result = await WorkspaceUser.findAll({
         where: whereWorkspace,
-        includes: [
-          { model: Role, as: 'role', where: whereRequestRole },
-          { model: User, as: 'user', where: whereRequestUser },
+        include: [
+          {
+            model: Role,
+            as: 'role',
+            attributes: ['id', 'name'],
+          },
+          {
+            model: User,
+            as: 'user',
+            where: whereRequestUser,
+            attributes: ['id', 'firstName', 'lastName', 'email'],
+          },
         ],
         attributes: ['id'],
       })
@@ -60,6 +85,106 @@ const getEmployees = async (req, res) => {
   }
 }
 
+const createEmployee = async (req, res) => {
+  try {
+    if (!req.body.userId || !req.body.roleId)
+      return res.status(406).json({
+        severity: 'error',
+        text: 'Введено некоректні інформацію!',
+      })
+    const isUser = await User.findByPk(req.body.userId)
+    const isRole = await Role.findByPk(req.body.roleId)
+    if (!isUser || !isRole)
+      return res.status(406).json({
+        severity: 'error',
+        text: 'Введено некоректні інформацію!',
+      })
+
+    const workspaceId = req.user.workspaceId
+
+    const sameUser = await WorkspaceUser.findOne({
+      where: {
+        userId: req.body.userId,
+        workspaceId: workspaceId,
+      },
+    })
+
+    if (sameUser)
+      return res.status(406).json({
+        severity: 'error',
+        text: 'Даний юзер вже працює!',
+      })
+    const user = await WorkspaceUser.create({
+      roleId: req.body.roleId,
+      userId: req.body.userId,
+      workspaceId,
+    })
+    return res.json({
+      severity: 'success',
+      text: 'Успішно додано!',
+      user,
+    })
+  } catch (err) {
+    return res.status(500).json({ err })
+  }
+}
+
+const updateEmployeeById = async (req, res) => {
+  try {
+    if (!req.body.userId || !req.body.roleId)
+      return res.status(406).json({
+        severity: 'error',
+        text: 'Введено некоректні інформацію!',
+      })
+    const isUser = await User.findByPk(req.body.userId)
+    const isRole = await Role.findByPk(req.body.roleId)
+    if (!isUser || !isRole)
+      return res.status(406).json({
+        severity: 'error',
+        text: 'Введено некоректні інформацію!',
+      })
+
+    const workspaceId = req.user.workspaceId
+
+    const user = await WorkspaceUser.update(
+      {
+        roleId: req.body.roleId,
+        userId: req.body.userId,
+        workspaceId,
+      },
+      {
+        where: { id: req.params.id },
+      },
+    )
+    return res.json({
+      severity: 'success',
+      text: 'Успішно оновлено!',
+      user,
+    })
+  } catch (err) {
+    return res.status(500).json(err)
+  }
+}
+
+const deleteEmployee = async (req, res) => {
+  try {
+    await WorkspaceUser.destroy({
+      where: {
+        id: req.params.id,
+      },
+    })
+    return res.json({
+      severity: 'success',
+      text: 'Успішно видалено!',
+    })
+  } catch (err) {
+    return res.status(500).json(err)
+  }
+}
+
 module.exports = {
   getEmployees,
+  createEmployee,
+  updateEmployeeById,
+  deleteEmployee,
 }

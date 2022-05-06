@@ -4,7 +4,6 @@ const { Op } = require("sequelize");
 const getRoles = async (req, res) => {
   try {
     const result = await Role.findAll({
-      where: { admin: { [Op.not]: true } },
       where: {
         [Op.and]: {
           admin: { [Op.not]: true },

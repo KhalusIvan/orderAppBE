@@ -14,7 +14,7 @@ const getCurrencies = async (req, res) => {
 const updateCurrencyValues = async () => {
   try {
     const id = process.env.CURRENCY_ID
-    const options = {
+    /*const options = {
       method: 'GET',
       url: 'https://openexchangerates.org/api/latest.json',
       params: { app_id: id },
@@ -38,7 +38,7 @@ const updateCurrencyValues = async () => {
       })
       .catch(function (error) {
         console.error(error)
-      })
+      })*/
   } catch (err) {
     console.log(err)
     return

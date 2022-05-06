@@ -1,6 +1,7 @@
 const express = require('express')
 
 const {
+  getUsers,
   confirmation,
   confirmPassword,
   check,
@@ -9,6 +10,7 @@ const {
 
 const itemRoutes = express.Router()
 
+itemRoutes.get('/', getUsers)
 itemRoutes.get('/check', check)
 itemRoutes.post('/confirm-password', confirmPassword)
 itemRoutes.post('/confirmation', confirmation)
