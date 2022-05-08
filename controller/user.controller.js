@@ -28,7 +28,7 @@ const getUsers = async (req, res) => {
         offset,
         attributes: ['id', 'firstName', 'lastName', 'email'],
       })
-      result.pages = Math.ceil(result.count / limit)
+      result.pages = Math.max(Math.ceil(result.count / limit), 1)
     } else {
       result = await User.findAll({
         /*include: [

@@ -25,6 +25,7 @@ module.exports = (sequelize, DataTypes) => {
   Manufacturer.init(
     {
       name: { type: DataTypes.STRING, allowNull: false },
+      percent: { type: DataTypes.FLOAT, allowNull: false },
       currencyId: { type: DataTypes.INTEGER, allowNull: false },
       workspaceId: { type: DataTypes.INTEGER, allowNull: false },
     },

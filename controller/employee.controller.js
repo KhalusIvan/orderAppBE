@@ -58,7 +58,7 @@ const getEmployees = async (req, res) => {
         })
         result.role = roleCount
       }
-      result.pages = Math.ceil(result.count / limit)
+      result.pages = Math.max(Math.ceil(result.count / limit), 1)
     } else {
       result = await WorkspaceUser.findAll({
         where: whereWorkspace,

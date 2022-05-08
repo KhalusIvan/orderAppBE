@@ -36,7 +36,7 @@ const getItems = async (req, res) => {
               {
                 model: Currency,
                 as: 'currency',
-                attributes: ['code'],
+                attributes: ['code', 'percent'],
               },
             ],
           },
@@ -61,7 +61,7 @@ const getItems = async (req, res) => {
         })
         result.manufacturer = manufacturerCount
       }
-      result.pages = Math.ceil(result.count / limit)
+      result.pages = Math.max(Math.ceil(result.count / limit), 1)
     } else {
       result = await Item.findAll({
         include: [
@@ -73,7 +73,7 @@ const getItems = async (req, res) => {
               {
                 model: Currency,
                 as: 'currency',
-                attributes: ['code'],
+                attributes: ['code', 'percent'],
               },
             ],
           },

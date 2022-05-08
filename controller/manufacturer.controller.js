@@ -21,7 +21,7 @@ const getManufacturers = async (req, res) => {
         where: whereRequest,
         limit,
         offset,
-        attributes: ['id', 'name'],
+        attributes: ['id', 'name', 'percent'],
       })
       if (req.query.filter) {
         const currencyCount = await Manufacturer.findAll({
@@ -38,12 +38,12 @@ const getManufacturers = async (req, res) => {
         })
         result.currency = currencyCount
       }
-      result.pages = Math.ceil(result.count / limit)
+      result.pages = Math.max(Math.ceil(result.count / limit), 1)
     } else {
       result = await Manufacturer.findAll({
         include: [{ model: Currency, as: 'currency' }],
         where: whereRequest,
-        attributes: ['id', 'name'],
+        attributes: ['id', 'name', 'percent'],
       })
     }
     return res.json(result)
@@ -80,6 +80,7 @@ const createManufacturer = async (req, res) => {
       })
     const manufacturer = await Manufacturer.create({
       name: req.body.name,
+      percent: req.body.percent,
       currencyId: req.body.currencyId,
       workspaceId,
     })
@@ -125,6 +126,7 @@ const updateManufacturerById = async (req, res) => {
         text: 'Дана назва вже використовується!',
       })
     update.name = req.body.name
+    update.percent = req.body.percent
 
     const manufacturer = await Manufacturer.update(update, {
       where: { id: req.params.id },

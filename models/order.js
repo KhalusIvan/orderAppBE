@@ -1,5 +1,5 @@
-"use strict";
-const { Model } = require("sequelize");
+'use strict'
+const { Model } = require('sequelize')
 module.exports = (sequelize, DataTypes) => {
   class Order extends Model {
     /**
@@ -10,31 +10,40 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       Order.belongsTo(models.Status, {
-        foreignKey: "statusId",
-        onDelete: "CASCADE",
-      });
+        as: 'status',
+        foreignKey: 'statusId',
+        onDelete: 'CASCADE',
+      })
+      Order.belongsTo(models.Payment, {
+        as: 'payment',
+        foreignKey: 'paymentId',
+        onDelete: 'CASCADE',
+      })
       Order.belongsTo(models.User, {
-        foreignKey: "userId",
-        onDelete: "CASCADE",
-      });
+        as: 'user',
+        foreignKey: 'userId',
+        onDelete: 'CASCADE',
+      })
       Order.belongsTo(models.Customer, {
-        foreignKey: "customerId",
-        onDelete: "CASCADE",
-      });
-      Order.hasMany(models.OrderItem, { foreignKey: "orderId" });
+        as: 'customer',
+        foreignKey: 'customerId',
+        onDelete: 'CASCADE',
+      })
+      Order.hasMany(models.OrderItem, { as: 'items', foreignKey: 'orderId' })
     }
   }
   Order.init(
     {
       postCode: DataTypes.STRING,
       statusId: DataTypes.INTEGER,
+      paymentId: DataTypes.INTEGER,
       userId: { type: DataTypes.INTEGER, allowNull: false },
       customerId: { type: DataTypes.INTEGER, allowNull: false },
     },
     {
       sequelize,
-      modelName: "Order",
-    }
-  );
-  return Order;
-};
+      modelName: 'Order',
+    },
+  )
+  return Order
+}

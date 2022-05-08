@@ -22,7 +22,7 @@ const getWorkspaces = async (req, res) => {
         offset,
         attributes: ['id'],
       })
-      result.pages = Math.ceil(result.count / limit)
+      result.pages = Math.max(Math.ceil(result.count / limit), 1)
     } else {
       result = await WorkspaceUser.findAll({
         include: [
