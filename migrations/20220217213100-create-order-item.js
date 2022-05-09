@@ -10,7 +10,7 @@ module.exports = {
       },
       buyPrice: {
         allowNull: false,
-        type: Sequelize.INTEGER
+        type: Sequelize.FLOAT
       },
       sellPrice: {
         allowNull: false,

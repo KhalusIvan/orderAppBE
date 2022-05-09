@@ -30,16 +30,6 @@ module.exports = {
           as: "userId",
         },
       },
-      customerId: {
-        allowNull: false,
-        type: Sequelize.INTEGER,
-        onDelete: "RESTRICT",
-        references: {
-          model: "Customers",
-          key: "id",
-          as: "customerId",
-        },
-      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,

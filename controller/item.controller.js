@@ -36,7 +36,7 @@ const getItems = async (req, res) => {
               {
                 model: Currency,
                 as: 'currency',
-                attributes: ['code', 'percent'],
+                attributes: ['code'],
               },
             ],
           },
@@ -73,7 +73,7 @@ const getItems = async (req, res) => {
               {
                 model: Currency,
                 as: 'currency',
-                attributes: ['code', 'percent'],
+                attributes: ['code'],
               },
             ],
           },

@@ -24,11 +24,6 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'userId',
         onDelete: 'CASCADE',
       })
-      Order.belongsTo(models.Customer, {
-        as: 'customer',
-        foreignKey: 'customerId',
-        onDelete: 'CASCADE',
-      })
       Order.hasMany(models.OrderItem, { as: 'items', foreignKey: 'orderId' })
     }
   }
@@ -38,7 +33,13 @@ module.exports = (sequelize, DataTypes) => {
       statusId: DataTypes.INTEGER,
       paymentId: DataTypes.INTEGER,
       userId: { type: DataTypes.INTEGER, allowNull: false },
-      customerId: { type: DataTypes.INTEGER, allowNull: false },
+      firstName: { type: DataTypes.STRING, allowNull: false },
+      lastName: { type: DataTypes.STRING, allowNull: false },
+      middleName: DataTypes.STRING,
+      city: DataTypes.STRING,
+      postOffice: DataTypes.INTEGER,
+      telephone: { type: DataTypes.STRING, allowNull: false },
+      workspaceId: { type: DataTypes.INTEGER, allowNull: false },
     },
     {
       sequelize,

@@ -13,7 +13,6 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "workspaceId",
         onDelete: "CASCADE",
       });
-      Customer.hasMany(models.Order, { foreignKey: "customerId" });
     }
   }
   Customer.init(

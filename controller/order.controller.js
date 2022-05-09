@@ -1,12 +1,13 @@
 const {
   Order,
-  Item,
   OrderItem,
-  Manufacturer,
   Status,
   Customer,
   Payment,
+  Item,
   User,
+  Manufacturer,
+  Currency,
   Sequelize,
 } = require('../models')
 const { Op } = require('sequelize')
@@ -14,8 +15,7 @@ const { Op } = require('sequelize')
 const getOrders = async (req, res) => {
   try {
     let result
-    const whereWorkspace = { workspaceId: req.user.workspaceId }
-    const whereRequest = {}
+    const whereRequest = { workspaceId: req.user.workspaceId }
     if (req.query.statusId) {
       const values = req.query.statusId.split(',')
       whereRequest.statusId =
@@ -27,7 +27,7 @@ const getOrders = async (req, res) => {
         values.length === 1 ? values[0] : { [Op.or]: values }
     }
     if (req.query.search) {
-      whereWorkspace[Op.or] = [
+      whereRequest[Op.or] = [
         { firstName: { [Op.like]: `%${req.query.search}%` } },
         { lastName: { [Op.like]: `%${req.query.search}%` } },
       ]
@@ -38,23 +38,9 @@ const getOrders = async (req, res) => {
       result = await Order.findAndCountAll({
         include: [
           {
-            model: Customer,
-            where: whereWorkspace,
-            as: 'customer',
-            attributes: [
-              'id',
-              'firstName',
-              'lastName',
-              'city',
-              'postOffice',
-              'telephone',
-              'middleName',
-            ],
-          },
-          {
             model: Status,
             as: 'status',
-            attributes: ['id', 'name'],
+            attributes: ['id', 'name', 'finish'],
           },
           {
             model: Payment,
@@ -66,13 +52,53 @@ const getOrders = async (req, res) => {
             as: 'user',
             attributes: ['id', 'firstName', 'lastName'],
           },
+          {
+            model: OrderItem,
+            as: 'items',
+            include: [
+              {
+                model: Item,
+                as: 'item',
+                include: [
+                  {
+                    model: Manufacturer,
+                    as: 'manufacturer',
+                    include: [
+                      {
+                        model: Currency,
+                        as: 'currency',
+                        attributes: ['code'],
+                      },
+                    ],
+                  },
+                ],
+                attributes: [
+                  'id',
+                  'name',
+                  'code',
+                  'buyPrice',
+                  'recomendedSellPrice',
+                ],
+              },
+            ],
+            attributes: ['id', 'buyPrice', 'sellPrice', 'amount'],
+          },
         ],
-        //group: ['statusId', 'userId', 'customerId', 'paymentId'],
         where: whereRequest,
         limit,
         offset,
         order: [['id', 'DESC']],
-        attributes: ['id', 'postCode', 'createdAt'],
+        attributes: [
+          'id',
+          'postCode',
+          'createdAt',
+          'firstName',
+          'lastName',
+          'middleName',
+          'city',
+          'telephone',
+          'postOffice',
+        ],
       })
       if (req.query.filter) {
         const statusCount = await Order.findAll({
@@ -105,15 +131,9 @@ const getOrders = async (req, res) => {
       result = await Order.findAll({
         include: [
           {
-            model: Customer,
-            where: whereWorkspace,
-            as: 'customer',
-            attributes: ['id', 'firstName', 'lastName', 'city'],
-          },
-          {
             model: Status,
             as: 'status',
-            attributes: ['id', 'name'],
+            attributes: ['id', 'name', 'finish'],
           },
           {
             model: Payment,
@@ -128,16 +148,50 @@ const getOrders = async (req, res) => {
           {
             model: OrderItem,
             as: 'items',
-            attributes: [
-              [Sequelize.fn('SUM', Sequelize.col('sellPrice')), 'total'],
+            include: [
+              {
+                model: Item,
+                as: 'item',
+                include: [
+                  {
+                    model: Manufacturer,
+                    as: 'manufacturer',
+                    include: [
+                      {
+                        model: Currency,
+                        as: 'currency',
+                        attributes: ['code'],
+                      },
+                    ],
+                  },
+                ],
+                attributes: [
+                  'id',
+                  'name',
+                  'code',
+                  'buyPrice',
+                  'recomendedSellPrice',
+                ],
+              },
             ],
+            attributes: ['id', 'buyPrice', 'sellPrice', 'amount'],
           },
         ],
         where: whereRequest,
         limit,
         offset,
         order: ['id', 'DESC'],
-        attributes: ['id', 'postCode', 'createdAt'],
+        attributes: [
+          'id',
+          'postCode',
+          'createdAt',
+          'firstName',
+          'lastName',
+          'middleName',
+          'city',
+          'telephone',
+          'postOffice',
+        ],
       })
     }
     return res.json(result)
@@ -163,48 +217,59 @@ const createOrder = async (req, res) => {
         text: 'Введено некоректні інформацію!',
       })
 
-    let customerId = req.body.customerId
     const workspaceId = req.user.workspaceId
 
-    if (!customerId) {
-      const customer = await Customer.findOne({
-        where: { telephone: req.body.telephone, workspaceId: workspaceId },
-      })
-      customerId = customer?.id
-    }
+    if (req.body.updateCustomer) {
+      let customerId = req.body.customerId
+      if (!customerId) {
+        const customer = await Customer.findOne({
+          where: { telephone: req.body.telephone, workspaceId: workspaceId },
+        })
+        customerId = customer?.id
+      }
 
-    if (!customerId) {
-      const customer = await Customer.create({
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
-        middleName: req.body.middleName || null,
-        city: req.body.city,
-        postOffice: req.body.postOffice,
-        telephone: req.body.telephone,
-        workspaceId,
-      })
-      customerId = customer.id
-    } else {
-      await Customer.update(
-        {
+      if (!customerId) {
+        const customer = await Customer.create({
           firstName: req.body.firstName,
           lastName: req.body.lastName,
           middleName: req.body.middleName || null,
           city: req.body.city,
           postOffice: req.body.postOffice,
           telephone: req.body.telephone,
-        },
-        {
-          where: { id: customerId },
-        },
-      )
+          workspaceId,
+        })
+        customerId = customer.id
+      } else {
+        await Customer.update(
+          {
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+            middleName: req.body.middleName || null,
+            city: req.body.city,
+            postOffice: req.body.postOffice,
+            telephone: req.body.telephone,
+          },
+          {
+            where: { id: customerId },
+          },
+        )
+      }
     }
+
     const order = await Order.create({
       statusId: req.body.statusId,
       paymentId: req.body.paymentId,
       userId: req.user.id,
-      customerId,
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      middleName: req.body.middleName || null,
+      city: req.body.city,
+      postOffice: req.body.postOffice,
+      telephone: req.body.telephone,
+      workspaceId,
     })
+    const orderItem = req.body.order.map((el) => ({ ...el, orderId: order.id }))
+    await OrderItem.bulkCreate(orderItem)
     return res.json({
       severity: 'success',
       text: 'Успішно додано!',
@@ -231,48 +296,55 @@ const updateOrderById = async (req, res) => {
         text: 'Введено некоректні інформацію!',
       })
 
-    let customerId = req.body.customerId
     const workspaceId = req.user.workspaceId
 
-    if (!customerId) {
-      const customer = await Customer.findOne({
-        where: { telephone: req.body.telephone, workspaceId: workspaceId },
-      })
-      customerId = customer?.id
-    }
+    if (req.body.updateCustomer) {
+      let customerId = req.body.customerId
+      if (!customerId) {
+        const customer = await Customer.findOne({
+          where: { telephone: req.body.telephone, workspaceId: workspaceId },
+        })
+        customerId = customer?.id
+      }
 
-    if (!customerId) {
-      const customer = await Customer.create({
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
-        middleName: req.body.middleName || null,
-        city: req.body.city,
-        postOffice: req.body.postOffice,
-        telephone: req.body.telephone,
-        workspaceId,
-      })
-      customerId = customer.id
-    } else {
-      await Customer.update(
-        {
+      if (!customerId) {
+        const customer = await Customer.create({
           firstName: req.body.firstName,
           lastName: req.body.lastName,
           middleName: req.body.middleName || null,
           city: req.body.city,
           postOffice: req.body.postOffice,
           telephone: req.body.telephone,
-        },
-        {
-          where: { id: customerId },
-        },
-      )
+          workspaceId,
+        })
+        customerId = customer.id
+      } else {
+        await Customer.update(
+          {
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+            middleName: req.body.middleName || null,
+            city: req.body.city,
+            postOffice: req.body.postOffice,
+            telephone: req.body.telephone,
+          },
+          {
+            where: { id: customerId },
+          },
+        )
+      }
     }
+
     const order = await Order.update(
       {
         statusId: req.body.statusId,
         paymentId: req.body.paymentId,
-        userId: req.user.id,
-        customerId,
+        firstName: req.body.firstName,
+        lastName: req.body.lastName,
+        middleName: req.body.middleName || null,
+        city: req.body.city,
+        postOffice: req.body.postOffice,
+        telephone: req.body.telephone,
       },
       { where: { id: req.params.id } },
     )
@@ -286,8 +358,40 @@ const updateOrderById = async (req, res) => {
   }
 }
 
+const finishOrderById = async (req, res) => {
+  try {
+    const finishStatus = await Status.findOne({ where: { finish: true } })
+    const order = await Order.update(
+      {
+        statusId: finishStatus.id,
+      },
+      { where: { id: req.params.id } },
+    )
+    for await (let item of req.body.order) {
+      let update = {
+        buyPrice: item.buyPrice,
+      }
+      await OrderItem.update(update, {
+        where: { id: item.id },
+      })
+    }
+    return res.json({
+      severity: 'success',
+      text: 'Успішно оновлено!',
+      order,
+    })
+  } catch (err) {
+    return res.status(500).json(err)
+  }
+}
+
 const deleteOrder = async (req, res) => {
   try {
+    await OrderItem.destroy({
+      where: {
+        orderId: req.params.id,
+      },
+    })
     await Order.destroy({
       where: {
         id: req.params.id,
@@ -306,5 +410,6 @@ module.exports = {
   getOrders,
   createOrder,
   updateOrderById,
+  finishOrderById,
   deleteOrder,
 }
