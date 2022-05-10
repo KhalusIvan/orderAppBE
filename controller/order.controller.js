@@ -219,41 +219,36 @@ const createOrder = async (req, res) => {
 
     const workspaceId = req.user.workspaceId
 
-    if (req.body.updateCustomer) {
-      let customerId = req.body.customerId
-      if (!customerId) {
-        const customer = await Customer.findOne({
-          where: { telephone: req.body.telephone, workspaceId: workspaceId },
-        })
-        customerId = customer?.id
-      }
+    const customer = await Customer.findOne({
+      where: { telephone: req.body.telephone, workspaceId: workspaceId },
+    })
+    let customerId = customer?.id
 
-      if (!customerId) {
-        const customer = await Customer.create({
+    if (!customerId) {
+      const customer = await Customer.create({
+        firstName: req.body.firstName,
+        lastName: req.body.lastName,
+        middleName: req.body.middleName || null,
+        city: req.body.city,
+        postOffice: req.body.postOffice,
+        telephone: req.body.telephone,
+        workspaceId,
+      })
+      customerId = customer.id
+    } else if (req.body.updateCustomer) {
+      await Customer.update(
+        {
           firstName: req.body.firstName,
           lastName: req.body.lastName,
           middleName: req.body.middleName || null,
           city: req.body.city,
           postOffice: req.body.postOffice,
           telephone: req.body.telephone,
-          workspaceId,
-        })
-        customerId = customer.id
-      } else {
-        await Customer.update(
-          {
-            firstName: req.body.firstName,
-            lastName: req.body.lastName,
-            middleName: req.body.middleName || null,
-            city: req.body.city,
-            postOffice: req.body.postOffice,
-            telephone: req.body.telephone,
-          },
-          {
-            where: { id: customerId },
-          },
-        )
-      }
+        },
+        {
+          where: { id: customerId },
+        },
+      )
     }
 
     const order = await Order.create({
@@ -267,6 +262,7 @@ const createOrder = async (req, res) => {
       postOffice: req.body.postOffice,
       telephone: req.body.telephone,
       workspaceId,
+      customerId,
     })
     const orderItem = req.body.order.map((el) => ({ ...el, orderId: order.id }))
     await OrderItem.bulkCreate(orderItem)
@@ -296,48 +292,27 @@ const updateOrderById = async (req, res) => {
         text: 'Введено некоректні інформацію!',
       })
 
-    const workspaceId = req.user.workspaceId
-
     if (req.body.updateCustomer) {
-      let customerId = req.body.customerId
-      if (!customerId) {
-        const customer = await Customer.findOne({
-          where: { telephone: req.body.telephone, workspaceId: workspaceId },
-        })
-        customerId = customer?.id
-      }
-
-      if (!customerId) {
-        const customer = await Customer.create({
+      const prevOrder = await Order.findOne({ where: { id: req.params.id } })
+      const customerId = prevOrder.customerId
+      await Customer.update(
+        {
           firstName: req.body.firstName,
           lastName: req.body.lastName,
           middleName: req.body.middleName || null,
           city: req.body.city,
           postOffice: req.body.postOffice,
           telephone: req.body.telephone,
-          workspaceId,
-        })
-        customerId = customer.id
-      } else {
-        await Customer.update(
-          {
-            firstName: req.body.firstName,
-            lastName: req.body.lastName,
-            middleName: req.body.middleName || null,
-            city: req.body.city,
-            postOffice: req.body.postOffice,
-            telephone: req.body.telephone,
-          },
-          {
-            where: { id: customerId },
-          },
-        )
-      }
+        },
+        {
+          where: { id: customerId },
+        },
+      )
     }
 
     for await (let item of req.body.order) {
       if (item.id) {
-        let update = {
+        const update = {
           buyPrice: item.buyPrice,
           sellPrice: item.sellPrice,
           amount: item.amount,

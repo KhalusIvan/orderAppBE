@@ -19,6 +19,11 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'paymentId',
         onDelete: 'CASCADE',
       })
+      Order.belongsTo(models.Customer, {
+        as: 'customer',
+        foreignKey: 'customerId',
+        onDelete: 'CASCADE',
+      })
       Order.belongsTo(models.User, {
         as: 'user',
         foreignKey: 'userId',
@@ -40,6 +45,7 @@ module.exports = (sequelize, DataTypes) => {
       postOffice: DataTypes.INTEGER,
       telephone: { type: DataTypes.STRING, allowNull: false },
       workspaceId: { type: DataTypes.INTEGER, allowNull: false },
+      customerId: { type: DataTypes.INTEGER, allowNull: false },
     },
     {
       sequelize,
