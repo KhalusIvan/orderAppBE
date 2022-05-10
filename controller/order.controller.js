@@ -335,6 +335,33 @@ const updateOrderById = async (req, res) => {
       }
     }
 
+    for await (let item of req.body.order) {
+      if (item.id) {
+        let update = {
+          buyPrice: item.buyPrice,
+          sellPrice: item.sellPrice,
+          amount: item.amount,
+        }
+        await OrderItem.update(update, {
+          where: { id: item.id },
+        })
+      } else {
+        await OrderItem.create({
+          buyPrice: item.buyPrice,
+          sellPrice: item.sellPrice,
+          amount: item.amount,
+          itemId: item.itemId,
+          orderId: req.params.id,
+        })
+      }
+    }
+
+    if (Array.isArray(req.body.orderDelete)) {
+      await OrderItem.destroy({
+        where: { id: { [Op.in]: req.body.orderDelete } },
+      })
+    }
+
     const order = await Order.update(
       {
         statusId: req.body.statusId,
