@@ -8,9 +8,6 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      postCode: {
-        type: Sequelize.STRING,
-      },
       statusId: {
         type: Sequelize.INTEGER,
         onDelete: "RESTRICT",

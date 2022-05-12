@@ -16,7 +16,6 @@ module.exports = (sequelize, DataTypes) => {
     {
       name: { type: DataTypes.STRING, allowNull: false },
       finish: { type: DataTypes.BOOLEAN, allowNull: false },
-      icon: DataTypes.TEXT,
     },
     {
       sequelize,
