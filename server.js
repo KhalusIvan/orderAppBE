@@ -21,10 +21,8 @@ app.use('/api', routes)
 sequelize
   .authenticate()
   .then(async (res) => {
-    console.log('Connection has been established successfully.')
     app.listen(PORT, function () {
       updateCurrencyValues();
-      console.log('Server is running on port: ' + PORT)
     })
   })
   .catch((err) => console.log(err))

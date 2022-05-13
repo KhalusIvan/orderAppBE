@@ -90,7 +90,6 @@ const getOrders = async (req, res) => {
         order: [['id', 'DESC']],
         attributes: [
           'id',
-          'postCode',
           'createdAt',
           'firstName',
           'lastName',
@@ -183,7 +182,6 @@ const getOrders = async (req, res) => {
         order: ['id', 'DESC'],
         attributes: [
           'id',
-          'postCode',
           'createdAt',
           'firstName',
           'lastName',
