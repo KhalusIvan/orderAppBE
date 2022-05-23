@@ -199,6 +199,67 @@ const getOrders = async (req, res) => {
   }
 }
 
+const getOrderStatistics = async (req, res) => {
+  try {
+    const status = await Status.findOne({
+      where: { finish: 1 },
+      attributes: ['id'],
+    })
+    const statusFinishId = status.id
+    const result = {}
+    const general = await OrderItem.findAll({
+      include: {
+        model: Order,
+        as: 'order',
+        where: { statusId: statusFinishId },
+        attributes: [],
+      },
+      attributes: [
+        [Sequelize.fn('DATE', Sequelize.col('order.createdAt')), 'date'],
+        [Sequelize.literal('SUM(amount * sellPrice)'), 'sell'],
+        [Sequelize.literal('SUM(amount * buyPrice)'), 'buy'],
+      ],
+      group: [[Sequelize.fn('DATE', Sequelize.col('order.createdAt')), 'date']],
+    })
+    const items = await OrderItem.findAll({
+      include: [
+        {
+          model: Item,
+          as: 'item',
+          attributes: ['id', 'code'],
+        },
+        {
+          model: Order,
+          as: 'order',
+          where: { statusId: statusFinishId },
+          attributes: [],
+        },
+      ],
+      attributes: [[Sequelize.literal('SUM(amount)'), 'number']],
+      group: 'itemId',
+    })
+    const saler = await OrderItem.findAll({
+      include: {
+        model: Order,
+        as: 'order',
+        where: { statusId: statusFinishId },
+        attributes: [],
+      },
+      attributes: [
+        [Sequelize.col('order.userId'), 'userSeller'],
+        [Sequelize.literal('SUM(amount * sellPrice)'), 'sell'],
+      ],
+      group: [[Sequelize.col('order.userId'), 'userSeller']],
+    })
+    result.items = items
+    result.general = general
+    result.saler = saler
+    return res.json(result)
+  } catch (err) {
+    return res.status(500).json(err)
+  }
+}
+
 const createOrder = async (req, res) => {
   try {
     if (
@@ -220,6 +281,7 @@ const createOrder = async (req, res) => {
     const customer = await Customer.findOne({
       where: { telephone: req.body.telephone, workspaceId: workspaceId },
     })
+
     let customerId = customer?.id
 
     if (!customerId) {
@@ -408,6 +470,7 @@ const deleteOrder = async (req, res) => {
 
 module.exports = {
   getOrders,
+  getOrderStatistics,
   createOrder,
   updateOrderById,
   finishOrderById,

@@ -11,6 +11,7 @@ module.exports = (sequelize, DataTypes) => {
       // define association here
       OrderItem.belongsTo(models.Order, {
         foreignKey: "orderId",
+        as: "order",
         onDelete: "CASCADE",
       });
       OrderItem.belongsTo(models.Item, {
