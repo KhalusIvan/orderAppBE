@@ -1,4 +1,4 @@
-const { User, Workspace, Sequelize } = require('../models')
+const { User, Workspace, WorkspaceUser, Role, Sequelize } = require('../models')
 const { Op } = require('sequelize')
 const bcrypt = require('bcrypt')
 
@@ -101,7 +101,16 @@ const check = async (req, res) => {
         },
       ],
     })
-
+    const role = await WorkspaceUser.findOne({
+      where: { userId: req.user.id, workspaceId: user.currentWorkspace.id },
+      attributes: [],
+      include: [
+        {
+          model: Role,
+          as: 'role',
+        },
+      ],
+    })
     if (user) {
       return res.json({
         user: {
@@ -109,13 +118,17 @@ const check = async (req, res) => {
           firstName: user.firstName,
           lastName: user.lastName,
           email: user.email,
-          currentWorkspace: user.currentWorkspace,
+          currentWorkspace: {
+            ...user.currentWorkspace.dataValues,
+            role: role.role,
+          },
         },
       })
     } else {
       res.status(401).json({})
     }
   } catch (err) {
+    console.log(err)
     return res.status(500).json(err)
   }
 }
@@ -137,6 +150,16 @@ const setCurrentWorkspace = async (req, res) => {
         },
       ],
     })
+    const role = await WorkspaceUser.findOne({
+      where: { userId: req.user.id, workspaceId: user.currentWorkspace.id },
+      attributes: [],
+      include: [
+        {
+          model: Role,
+          as: 'role',
+        },
+      ],
+    })
     return res.json({
       severity: 'success',
       text: 'Успішно вибрано!',
@@ -145,7 +168,10 @@ const setCurrentWorkspace = async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        currentWorkspace: user.currentWorkspace,
+        currentWorkspace: {
+          ...user.currentWorkspace.dataValues,
+          role: role.role,
+        },
       },
     })
   } catch (err) {

@@ -84,7 +84,7 @@ const getOrders = async (req, res) => {
             attributes: ['id', 'buyPrice', 'sellPrice', 'amount'],
           },
         ],
-        where: whereRequest,
+        where: { ...whereRequest },
         limit,
         offset,
         order: [['id', 'DESC']],
@@ -214,7 +214,11 @@ const getOrderStatistics = async (req, res) => {
       include: {
         model: Order,
         as: 'order',
-        where: { statusId: statusFinishId, createdAt: { [Op.gte]: fromDate } },
+        where: {
+          statusId: statusFinishId,
+          workspaceId: req.user.workspaceId,
+          createdAt: { [Op.gte]: fromDate },
+        },
         attributes: [],
       },
       attributes: [
@@ -236,6 +240,7 @@ const getOrderStatistics = async (req, res) => {
           as: 'order',
           where: {
             statusId: statusFinishId,
+            workspaceId: req.user.workspaceId,
             createdAt: { [Op.gte]: fromDate },
           },
           attributes: [],
@@ -248,7 +253,11 @@ const getOrderStatistics = async (req, res) => {
       include: {
         model: Order,
         as: 'order',
-        where: { statusId: statusFinishId, createdAt: { [Op.gte]: fromDate } },
+        where: {
+          statusId: statusFinishId,
+          workspaceId: req.user.workspaceId,
+          createdAt: { [Op.gte]: fromDate },
+        },
         attributes: [],
       },
       attributes: [
