@@ -205,13 +205,16 @@ const getOrderStatistics = async (req, res) => {
       where: { finish: 1 },
       attributes: ['id'],
     })
+    const dateMin = new Date()
+    dateMin.setDate(dateMin.getDate() - 13)
+    const fromDate = new Date(`${dateMin.toISOString().split('T')[0]} 00:00:00`)
     const statusFinishId = status.id
     const result = {}
     const general = await OrderItem.findAll({
       include: {
         model: Order,
         as: 'order',
-        where: { statusId: statusFinishId },
+        where: { statusId: statusFinishId, createdAt: { [Op.gte]: fromDate } },
         attributes: [],
       },
       attributes: [
@@ -231,7 +234,10 @@ const getOrderStatistics = async (req, res) => {
         {
           model: Order,
           as: 'order',
-          where: { statusId: statusFinishId },
+          where: {
+            statusId: statusFinishId,
+            createdAt: { [Op.gte]: fromDate },
+          },
           attributes: [],
         },
       ],
@@ -242,7 +248,7 @@ const getOrderStatistics = async (req, res) => {
       include: {
         model: Order,
         as: 'order',
-        where: { statusId: statusFinishId },
+        where: { statusId: statusFinishId, createdAt: { [Op.gte]: fromDate } },
         attributes: [],
       },
       attributes: [
@@ -250,12 +256,22 @@ const getOrderStatistics = async (req, res) => {
         [Sequelize.literal('SUM(amount * sellPrice)'), 'sell'],
       ],
       group: [[Sequelize.col('order.userId'), 'userSeller']],
+      raw: true,
+    })
+    const ids = await User.findAll({
+      where: { id: [...new Set(saler.map((el) => el.userSeller))] },
+      attributes: ['id', 'firstName', 'lastName'],
+      raw: true,
     })
     result.items = items
     result.general = general
-    result.saler = saler
+    result.saler = saler.map((el) => ({
+      sell: el.sell,
+      user: ids.find((id) => id.id === el.userSeller),
+    }))
     return res.json(result)
   } catch (err) {
+    console.log(err)
     return res.status(500).json(err)
   }
 }
