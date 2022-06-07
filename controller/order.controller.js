@@ -14,6 +14,10 @@ const { Op } = require('sequelize')
 
 const getOrders = async (req, res) => {
   try {
+    const userWhere = {}
+    if (req.user.role?.seller) {
+      userWhere.userId = req.user.id
+    }
     let result
     const whereRequest = { workspaceId: req.user.workspaceId }
     if (req.query.statusId) {
@@ -84,7 +88,7 @@ const getOrders = async (req, res) => {
             attributes: ['id', 'buyPrice', 'sellPrice', 'amount'],
           },
         ],
-        where: { ...whereRequest },
+        where: { ...whereRequest, ...userWhere },
         limit,
         offset,
         order: [['id', 'DESC']],
@@ -110,6 +114,7 @@ const getOrders = async (req, res) => {
           ],
           attributes: [[Sequelize.literal('COUNT(statusId)'), 'number']],
           group: 'statusId',
+          where: userWhere,
         })
         result.status = statusCount
         const paymentCount = await Order.findAll({
@@ -122,6 +127,7 @@ const getOrders = async (req, res) => {
           ],
           attributes: [[Sequelize.literal('COUNT(paymentId)'), 'number']],
           group: 'paymentId',
+          where: userWhere,
         })
         result.payment = paymentCount
       }
@@ -176,7 +182,7 @@ const getOrders = async (req, res) => {
             attributes: ['id', 'buyPrice', 'sellPrice', 'amount'],
           },
         ],
-        where: whereRequest,
+        where: { ...whereRequest, ...userWhere },
         limit,
         offset,
         order: ['id', 'DESC'],
@@ -201,6 +207,10 @@ const getOrders = async (req, res) => {
 
 const getOrderStatistics = async (req, res) => {
   try {
+    const userWhere = {}
+    if (req.user.role?.seller) {
+      userWhere.userId = req.user.id
+    }
     const status = await Status.findOne({
       where: { finish: 1 },
       attributes: ['id'],
@@ -215,6 +225,7 @@ const getOrderStatistics = async (req, res) => {
         model: Order,
         as: 'order',
         where: {
+          ...userWhere,
           statusId: statusFinishId,
           workspaceId: req.user.workspaceId,
           createdAt: { [Op.gte]: fromDate },
@@ -239,6 +250,7 @@ const getOrderStatistics = async (req, res) => {
           model: Order,
           as: 'order',
           where: {
+            ...userWhere,
             statusId: statusFinishId,
             workspaceId: req.user.workspaceId,
             createdAt: { [Op.gte]: fromDate },
@@ -254,6 +266,7 @@ const getOrderStatistics = async (req, res) => {
         model: Order,
         as: 'order',
         where: {
+          ...userWhere,
           statusId: statusFinishId,
           workspaceId: req.user.workspaceId,
           createdAt: { [Op.gte]: fromDate },

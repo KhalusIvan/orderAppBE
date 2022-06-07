@@ -1,16 +1,17 @@
-const express = require('express');
+const express = require('express')
 
-const { 
-  getWorkspaces, 
+const {
+  getWorkspaces,
   createWorkspace,
   updateWorkspaceById,
- } = require("../controller/workspace.controller"); 
+  deleteWorkspace,
+} = require('../controller/workspace.controller')
 
-const workspaceRoutes = express.Router();
+const workspaceRoutes = express.Router()
 
-workspaceRoutes.get('/', getWorkspaces);
-workspaceRoutes.post('/create', createWorkspace);
-workspaceRoutes.post('/:id/update', updateWorkspaceById);
+workspaceRoutes.get('/', getWorkspaces)
+workspaceRoutes.post('/create', createWorkspace)
+workspaceRoutes.post('/:id/update', updateWorkspaceById)
+workspaceRoutes.delete('/:id', deleteWorkspace)
 
-module.exports = workspaceRoutes;
-
+module.exports = workspaceRoutes

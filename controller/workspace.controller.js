@@ -1,4 +1,14 @@
-const { Workspace, Role, User, WorkspaceUser } = require('../models')
+const {
+  Workspace,
+  Role,
+  User,
+  WorkspaceUser,
+  OrderItem,
+  Order,
+  Customer,
+  Item,
+  Manufacturer,
+} = require('../models')
 const { Op } = require('sequelize')
 
 const getWorkspaces = async (req, res) => {
@@ -99,6 +109,42 @@ const updateWorkspaceById = async (req, res) => {
         where: { id: req.params.id },
       },
     )
+    const user = await User.findOne({
+      where: { id: req.user.id },
+      include: [
+        {
+          model: Workspace,
+          as: 'currentWorkspace',
+        },
+      ],
+    })
+    if (+user.currentWorkspace.id === +req.params.id) {
+      const userRole = await WorkspaceUser.findOne({
+        where: { userId: req.user.id, workspaceId: user.currentWorkspace.id },
+        attributes: [],
+        include: [
+          {
+            model: Role,
+            as: 'role',
+          },
+        ],
+      })
+      return res.json({
+        severity: 'success',
+        text: 'Успішно видалено!',
+        workspace,
+        user: {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          currentWorkspace: {
+            ...user.currentWorkspace.dataValues,
+            role: userRole.role,
+          },
+        },
+      })
+    }
     return res.json({
       severity: 'success',
       text: 'Успішно оновлено!',
@@ -109,8 +155,125 @@ const updateWorkspaceById = async (req, res) => {
   }
 }
 
+const deleteWorkspace = async (req, res) => {
+  try {
+    const role = await Role.findOne({ where: { owner: true } })
+    const workspaceRole = await WorkspaceUser.findOne({
+      where: { workspaceId: req.user.workspaceId, userId: req.user.id },
+      attributes: ['roleId'],
+    })
+    if (role.id === workspaceRole.roleId) {
+      result = await WorkspaceUser.findAndCountAll({
+        where: { userId: req.user.id, roleId: role.id },
+        attributes: ['id'],
+      })
+      if (result.count === 1) {
+        return res.status(406).json({
+          severity: 'error',
+          text: 'Не можна видалити єдиний власний простір!',
+        })
+      }
+
+      await OrderItem.findAll({
+        attributes: ['id'],
+        include: [
+          { model: Order, as: 'order', where: { workspaceId: req.params.id } },
+        ],
+        raw: true,
+      }).then(async function (items) {
+        const itemIds = items.map((el) => el.id)
+        if (itemIds.length === 0) return Promise.resolve(true) //nothing to delete
+        await OrderItem.destroy({ where: { id: { [Op.in]: itemIds } } })
+        return Promise.resolve(true)
+      })
+      await Order.destroy({ where: { workspaceId: req.params.id } })
+      await Customer.destroy({ where: { workspaceId: req.params.id } })
+      await Item.findAll({
+        attributes: ['id'],
+        include: [
+          {
+            model: Manufacturer,
+            as: 'manufacturer',
+            where: { workspaceId: req.params.id },
+          },
+        ],
+        raw: true,
+      }).then(async function (items) {
+        const itemIds = items.map((el) => el.id)
+        if (itemIds.length === 0) return Promise.resolve(true) //nothing to delete
+        await Item.destroy({ where: { id: { [Op.in]: itemIds } } })
+        return Promise.resolve(true)
+      })
+      await Manufacturer.destroy({ where: { workspaceId: req.params.id } })
+
+      const newCurrentWorkspace = await WorkspaceUser.findOne({
+        where: {
+          workspaceId: { [Op.not]: req.params.id },
+          userId: req.user.id,
+          roleId: role.id,
+        },
+        attributes: ['workspaceId'],
+      })
+      await User.update(
+        { currentWorkspaceId: newCurrentWorkspace.workspaceId },
+        {
+          where: { id: req.user.id },
+        },
+      )
+      await WorkspaceUser.destroy({ where: { workspaceId: req.params.id } })
+      await Workspace.destroy({
+        where: {
+          id: req.params.id,
+        },
+      })
+      const user = await User.findOne({
+        where: { id: req.user.id },
+        include: [
+          {
+            model: Workspace,
+            as: 'currentWorkspace',
+          },
+        ],
+      })
+      const userRole = await WorkspaceUser.findOne({
+        where: { userId: req.user.id, workspaceId: user.currentWorkspace.id },
+        attributes: [],
+        include: [
+          {
+            model: Role,
+            as: 'role',
+          },
+        ],
+      })
+      return res.json({
+        severity: 'success',
+        text: 'Успішно видалено!',
+        user: {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          currentWorkspace: {
+            ...user.currentWorkspace.dataValues,
+            role: userRole.role,
+          },
+        },
+      })
+    } else {
+      return res.json({
+        severity: 'success',
+        text: 'Успішно видалено!',
+      })
+    }
+  } catch (err) {
+    console.log(err)
+    return res.status(500).json(err)
+  }
+}
+
 module.exports = {
   getWorkspaces,
   createWorkspace,
   updateWorkspaceById,
+  deleteWorkspace,
 }
