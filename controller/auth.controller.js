@@ -135,7 +135,6 @@ const registration = async (req, res) => {
 
 const signIn = async (req, res) => {
   try {
-    console.log(req.body)
     if (!req.body.password || !req.body.email) {
       res
         .status(406)
