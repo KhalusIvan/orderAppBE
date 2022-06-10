@@ -1,6 +1,6 @@
 const dotenv = require('dotenv')
 dotenv.config()
-
+const nodeCron = require('node-cron')
 const routes = require('./routes')
 const sequelize = require('./sequelize')
 const express = require('express')
@@ -22,7 +22,14 @@ sequelize
   .authenticate()
   .then(async (res) => {
     app.listen(PORT, function () {
-      updateCurrencyValues();
+      updateCurrencyValues()
+      const job = nodeCron.schedule(
+        '0 * * * *',
+        function jobYouNeedToExecute() {
+          updateCurrencyValues()
+          console.log(new Date().toLocaleString())
+        },
+      )
     })
   })
   .catch((err) => console.log(err))
