@@ -18,10 +18,10 @@ app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use('/api', routes)
 
-sequelize
-  .authenticate()
-  .then(async (res) => {
-    app.listen(PORT, function () {
+app.listen(PORT, function () {
+  sequelize
+    .authenticate()
+    .then(async (res) => {
       updateCurrencyValues()
       const job = nodeCron.schedule(
         '0 * * * *',
@@ -31,5 +31,5 @@ sequelize
         },
       )
     })
-  })
-  .catch((err) => console.log(err))
+    .catch((err) => console.log(err))
+})
