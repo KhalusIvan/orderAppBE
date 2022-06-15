@@ -101,8 +101,11 @@ const check = async (req, res) => {
         },
       ],
     })
+    if (!user) {
+      return res.status(401).json({})
+    }
     const role = await WorkspaceUser.findOne({
-      where: { userId: req.user.id, workspaceId: user.currentWorkspace.id },
+      where: { userId: req.user.id, workspaceId: user.currentWorkspace?.id || user.currentWorkspace.dataValues.id },
       attributes: [],
       include: [
         {
@@ -259,7 +262,7 @@ const changeInfo = async (req, res) => {
     })
     return res.json({
       severity: 'success',
-      text: 'Успішно видалено!',
+      text: 'Успішно оновлено!',
       user: {
         id: user.id,
         firstName: user.firstName,
